@@ -16,7 +16,9 @@
   },
   "devDependencies": {
     "dynalite": "^0.3.7",
+    "pbf": "0.0.2",
     "queue-async": "^1.0.7",
-    "tape": "^2.14.0"
+    "tape": "^2.14.0",
+    "vector-tile": "^0.1.2"
   }
 }

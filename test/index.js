@@ -1,9 +1,13 @@
 var test = require('tape');
 var CardboardTiles = require('..');
 var Cardboard = require('cardboard');
+var VectorTile = require('vector-tile').VectorTile;
+var Protobuf = require('pbf');
 var queue = require('queue-async');
+var _ = require('underscore');
 var fs = require('fs');
 var path = require('path');
+var zlib = require('zlib');
 
 var config = {
     awsKey: 'fake',
@@ -62,6 +66,13 @@ test('setup', function(t) {
 
 var preloaded, notPreloaded;
 
+test('initialization: missing info', function(t) {
+    new CardboardTiles(_(config).omit('table'), function(err, source) {
+        t.equal(err.message, 'Missing keys in config: table', 'expected error');
+        t.end();
+    });
+});
+
 test('initialization: no preload', function(t) {
     new CardboardTiles(config, function(err, source) {
         t.ifError(err, 'initialized successfully');
@@ -81,9 +92,24 @@ test('initialization: preload', function(t) {
     });
 });
 
+var expectedInfo = {
+    json: {
+        vector_layers: [
+            {
+                id: 'test',
+                minzoom:0,
+                maxzoom:14
+            }
+        ]
+    },
+    minzoom: 0,
+    maxzoom: 14
+};
+
 test('getInfo: no preload', function(t) {
     notPreloaded.getInfo(function(err, info) {
         t.ifError(err, 'got metadata');
+        t.deepEqual(info, expectedInfo, 'got expected metadata');
         t.end();
     });
 });
@@ -91,46 +117,37 @@ test('getInfo: no preload', function(t) {
 test('getInfo: preload', function(t) {
     preloaded.getInfo(function(err, info) {
         t.ifError(err, 'got metadata');
-        
-        var expected = {
-            bounds: [ -1, -1, 1, 1 ],
-            center: [ -0.5, -0.5 ],
-            format: 'pbf',
-            vector_layers: [
-                {
-                    id: "OGRGeoJSON",
-                    description: "",
-                    minzoom: 0,
-                    maxzoom: 14,
-                    fields: {
-                        name: "String",
-                        id: "String"
-                    }
-                }
-            ],
-            maxzoom: 14,
-            minzoom: 0
-        };
-
-        t.deepEqual(info, expected, 'got expected metadata');
-
+        t.deepEqual(info, expectedInfo, 'got expected metadata');
         t.end();
     });
 });
 
-test('getTile: preload', function(t) {
-    preloaded.getTile(5, 15, 15, function(err, tile) {
-        t.ifError(err, 'got tile');
-        // TODO: check the tile for correctness
+function testTile(data, t) {
+    zlib.gunzip(data, function(err, tileData) {
+        t.ifError(err, 'unzipped tile');
+        
+        var tile = new VectorTile(new Protobuf(tileData));
+        t.ok(tile.layers.OGRGeoJSON, 'contains layer');
+        t.equal(tile.layers.OGRGeoJSON.length, 60, 'contains correct number of features');
+
+        var geom = tile.layers.OGRGeoJSON.feature(0).loadGeometry();
+        t.deepEqual(geom, [ [ { x: 3804, y: 3937 } ] ], 'feature has correct geometry');
+
         t.end();
+    });
+}
+
+test('getTile: preload', function(t) {
+    preloaded.getTile(5, 15, 15, function(err, data) {
+        t.ifError(err, 'got tile');
+        testTile(data, t);
     });
 });
 
 test('getTile: no preload', function(t) {
-    notPreloaded.getTile(5, 15, 15, function(err, tile) {
+    notPreloaded.getTile(5, 15, 15, function(err, data) {
         t.ifError(err, 'got tile');
-        // TODO: check the tile for correctness
-        t.end();
+        testTile(data, t);
     });
 });
 
