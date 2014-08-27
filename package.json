@@ -1,0 +1,22 @@
+{
+  "name": "tilelive-cardboard",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape test/*.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cardboard": "^0.2.1",
+    "sphericalmercator": "^1.0.2",
+    "tilelive-bridge": "^0.6.0",
+    "underscore": "^1.7.0"
+  },
+  "devDependencies": {
+    "dynalite": "^0.3.7",
+    "queue-async": "^1.0.7",
+    "tape": "^2.14.0"
+  }
+}
