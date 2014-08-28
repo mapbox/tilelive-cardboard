@@ -1,5 +1,7 @@
 # tilelive-cardboard
 
+[![build status](https://travis-ci.org/mapbox/tilelive-cardboard.svg?branch=master)](https://travis-ci.org/mapbox/tilelive-cardboard)
+
 Implements the [tilelive API](https://github.com/mapbox/tilelive.js/blob/d7703bbf3a4f7084a4b225bc85c87ecab185ccb9/API.md) for creating mapnik vector tiles from a [cardboard](https://github.com/mapbox/cardboard) datasource.
 
 ## Initialization
