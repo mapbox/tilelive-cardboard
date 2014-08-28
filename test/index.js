@@ -128,7 +128,7 @@ function testTile(data, t) {
         
         var tile = new VectorTile(new Protobuf(tileData));
         t.ok(tile.layers.OGRGeoJSON, 'contains layer');
-        t.equal(tile.layers.OGRGeoJSON.length, 60, 'contains correct number of features');
+        t.equal(tile.layers.OGRGeoJSON.length, 43, 'contains correct number of features');
 
         var geom = tile.layers.OGRGeoJSON.feature(0).loadGeometry();
         t.deepEqual(geom, [ [ { x: 3804, y: 3937 } ] ], 'feature has correct geometry');

@@ -6,7 +6,10 @@ var fs = require('fs');
 var path = require('path');
 var xml = fs.readFileSync(path.join(__dirname, 'map.xml'), 'utf8');
 
-var tileSize = 512, defaultBuffer = 12;
+// Assumptions.
+var tileSize = 256, defaultBuffer = 8,
+    defaultMinZoom = 0, defaultMaxZoom = 14;
+
 var merc = new SphericalMercator({
     size: tileSize
 });
@@ -46,13 +49,13 @@ function CardboardTiles(uri, callback) {
             vector_layers: [
                 {
                     id: uri.layer,
-                    minzoom:0,
-                    maxzoom:14
+                    minzoom: defaultMinZoom,
+                    maxzoom: defaultMaxZoom
                 }
             ]
         },
-        minzoom: 0,
-        maxzoom: 14
+        minzoom: defaultMinZoom,
+        maxzoom: defaultMaxZoom
     };
 
     // Optionally provide bbox for preloading data
