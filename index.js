@@ -106,7 +106,11 @@ CardboardTiles.prototype.getTile = function(z, x, y, callback) {
         new Bridge({ xml: mapnikXml }, function(err, source) {
             if (err) return callback(err);
 
-            source.getTile(z, x, y, callback);
+            source.getTile(z, x, y, function(err, tile) {
+                source.close(function() {
+                    callback(err, tile);
+                });
+            });
         });
     });
 };
