@@ -17,16 +17,12 @@ var merc = new SphericalMercator({
 module.exports = CardboardTiles;
 
 function CardboardTiles(uri, callback) {
-    // Should be able to parse connection data from a URI-type of string also
+    // TODO: Should be able to parse connection data from a URI-type of string
     // Maybe something like:
-    // cardboard://key:secret@endpoint/region/table?bbox=w,s,e,n
+    // cardboard://table/dataset?bbox=w,s,e,n&endpoint=...
 
     var missingKeys = _([
-        'awsKey',
-        'awsSecret',
         'table',
-        'endpoint',
-        'region',
         'dataset'
     ]).difference(Object.keys(uri));
 
@@ -34,12 +30,15 @@ function CardboardTiles(uri, callback) {
         return callback(new Error('Missing keys in config: ' + missingKeys.join(', ')));
 
     this._connection = {
-        awsKey: uri.awsKey,
-        awsSecret:  uri.awsSecret,
+        awsKey: process.env.AWS_ACCESS_KEY_ID,
+        awsSecret: process.env.AWS_SECRET_ACCESS_KEY,
         table: uri.table,
         endpoint:  uri.endpoint,
-        region: uri.region
+        region: process.env.AWS_DEFAULT_REGION
     };
+
+    if (!this._connection.awsKey || !this._connection.awsSecret || !this._connection.region)
+        return callback(new Error('Missing AWS credentials in environment'));
 
     // Sanitize dataset name
     this._dataset = uri.dataset.replace(/\./g, '_');
