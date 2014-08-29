@@ -41,14 +41,15 @@ function CardboardTiles(uri, callback) {
         region: uri.region
     };
 
-    this._layer = uri.layer;
+    // Sanitize layer name
+    this._layer = uri.layer.replace(/\./g, '_');
 
     // Default vector tile info
     this._info = {
         json: {
             vector_layers: [
                 {
-                    id: uri.layer,
+                    id: this._layer,
                     minzoom: defaultMinZoom,
                     maxzoom: defaultMaxZoom
                 }

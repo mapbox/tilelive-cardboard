@@ -9,14 +9,14 @@
     <Parameter name="minzoom">0</Parameter>
   </Parameters>
 
-  <Layer name="OGRGeoJSON"
+  <Layer name="<%= layer %>"
     buffer-size="<%= buffer %>"
     srs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs">
 
     <Datasource>
        <Parameter name="string"><![CDATA[<%= JSON.stringify(geojson) %>]]></Parameter>
        <Parameter name="type"><![CDATA[ogr]]></Parameter>
-       <Parameter name="layer">OGRGeoJSON</Parameter>
+       <Parameter name="layer">OGRGeoJson</Parameter>
     </Datasource>
   </Layer>
 

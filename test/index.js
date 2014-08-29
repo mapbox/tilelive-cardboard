@@ -73,6 +73,15 @@ test('initialization: missing info', function(t) {
     });
 });
 
+test('initialization: sanitizes layer name', function(t) {
+    var newLayerName = _({ layer: 'test.sanitization' }).defaults(config);
+    new CardboardTiles(newLayerName, function(err, source) {
+        t.ifError(err, 'initialized successfully');
+        t.equal(source._layer, 'test_sanitization', 'sanitized properly');
+        t.end();
+    });
+});
+
 test('initialization: no preload', function(t) {
     new CardboardTiles(config, function(err, source) {
         t.ifError(err, 'initialized successfully');
@@ -127,10 +136,11 @@ function testTile(data, t) {
         t.ifError(err, 'unzipped tile');
         
         var tile = new VectorTile(new Protobuf(tileData));
-        t.ok(tile.layers.OGRGeoJSON, 'contains layer');
-        t.equal(tile.layers.OGRGeoJSON.length, 43, 'contains correct number of features');
+        var layer = tile.layers[config.layer];
+        t.ok(layer, 'contains layer');
+        t.equal(layer.length, 43, 'contains correct number of features');
 
-        var geom = tile.layers.OGRGeoJSON.feature(0).loadGeometry();
+        var geom = layer.feature(0).loadGeometry();
         t.deepEqual(geom, [ [ { x: 3804, y: 3937 } ] ], 'feature has correct geometry');
 
         t.end();
