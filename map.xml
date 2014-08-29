@@ -9,7 +9,7 @@
     <Parameter name="minzoom"><%= minzoom %></Parameter>
   </Parameters>
 
-  <Layer name="<%= layer %>"
+  <Layer name="<%= dataset %>"
     buffer-size="<%= buffer %>"
     srs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs">
 

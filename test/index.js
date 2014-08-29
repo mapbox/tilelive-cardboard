@@ -15,7 +15,7 @@ var config = {
     table: 'geo',
     endpoint: 'http://localhost:4567',
     region: 'us-east-1',
-    layer: 'test'
+    dataset: 'test'
 };
 
 var dynalite;
@@ -44,7 +44,7 @@ test('setup', function(t) {
         var fixture = path.join(__dirname, 'fixtures', 'random-data.geojson');
 
         function insertFeature(feature, id, cb) {
-            cardboard.insert(id, feature, config.layer, cb);
+            cardboard.insert(id, feature, config.dataset, cb);
         }
 
         fs.readFile(fixture, 'utf8', function(err, data) {
@@ -73,11 +73,11 @@ test('initialization: missing info', function(t) {
     });
 });
 
-test('initialization: sanitizes layer name', function(t) {
-    var newLayerName = _({ layer: 'test.sanitization' }).defaults(config);
-    new CardboardTiles(newLayerName, function(err, source) {
+test('initialization: sanitizes dataset name', function(t) {
+    var newDatasetName = _({ dataset: 'test.sanitization' }).defaults(config);
+    new CardboardTiles(newDatasetName, function(err, source) {
         t.ifError(err, 'initialized successfully');
-        t.equal(source._layer, 'test_sanitization', 'sanitized properly');
+        t.equal(source._dataset, 'test_sanitization', 'sanitized properly');
         t.end();
     });
 });
@@ -136,13 +136,13 @@ function testTile(data, t) {
         t.ifError(err, 'unzipped tile');
         
         var tile = new VectorTile(new Protobuf(tileData));
-        var layer = tile.layers[config.layer];
+        var layer = tile.layers[config.dataset];
         t.ok(layer, 'contains layer');
         t.equal(layer.length, 43, 'contains correct number of features');
 
         var geom = layer.feature(0).loadGeometry();
         t.deepEqual(geom, [ [ { x: 3804, y: 3937 } ] ], 'feature has correct geometry');
-
+        t.deepEqual(layer.feature(0).properties, { test: 'yes'}, 'feature has correct properties');
         t.end();
     });
 }

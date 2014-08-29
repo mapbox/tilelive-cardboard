@@ -27,7 +27,7 @@ function CardboardTiles(uri, callback) {
         'table',
         'endpoint',
         'region',
-        'layer'
+        'dataset'
     ]).difference(Object.keys(uri));
 
     if (missingKeys.length > 0) 
@@ -41,15 +41,15 @@ function CardboardTiles(uri, callback) {
         region: uri.region
     };
 
-    // Sanitize layer name
-    this._layer = uri.layer.replace(/\./g, '_');
+    // Sanitize dataset name
+    this._dataset = uri.dataset.replace(/\./g, '_');
 
     // Default vector tile info
     this._info = {
         json: {
             vector_layers: [
                 {
-                    id: this._layer,
+                    id: this._dataset,
                     minzoom: defaultMinZoom,
                     maxzoom: defaultMaxZoom
                 }
@@ -122,10 +122,10 @@ CardboardTiles.prototype.close = function(callback) {
 
 CardboardTiles.prototype._getXml = function(bbox, callback) {
     var cardboard = Cardboard(this._connection);
-    var layer = this._layer;
+    var dataset = this._dataset;
     var info = this._info;
 
-    cardboard.bboxQuery(bbox, layer, function(err, data) {
+    cardboard.bboxQuery(bbox, dataset, function(err, data) {
         if (err) return callback(err, data);
 
         data = data.map(function(feature) {
@@ -140,7 +140,7 @@ CardboardTiles.prototype._getXml = function(bbox, callback) {
         var params = _({
             buffer: defaultBuffer,
             geojson: geojson,
-            layer: layer,
+            dataset: dataset,
             minzoom: defaultMinZoom,
             maxzoom: defaultMaxZoom
         }).extend(info);
