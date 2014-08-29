@@ -5,8 +5,8 @@
   <Parameters>
     <Parameter name="format">pbf</Parameter>
     <Parameter name="json"><![CDATA[<%= JSON.stringify(json) %>]]></Parameter>
-    <Parameter name="maxzoom">14</Parameter>
-    <Parameter name="minzoom">0</Parameter>
+    <Parameter name="maxzoom"><%= maxzoom %></Parameter>
+    <Parameter name="minzoom"><%= minzoom %></Parameter>
   </Parameters>
 
   <Layer name="<%= layer %>"

@@ -136,7 +136,9 @@ CardboardTiles.prototype._getXml = function(bbox, callback) {
         var params = _({
             buffer: defaultBuffer,
             geojson: geojson,
-            layer: layer
+            layer: layer,
+            minzoom: defaultMinZoom,
+            maxzoom: defaultMaxZoom
         }).extend(info);
 
         var preparedXml = _.template(xml)(params);
