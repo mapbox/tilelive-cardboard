@@ -19,11 +19,10 @@ module.exports = CardboardTiles;
 function CardboardTiles(uri, callback) {
     // TODO: Should be able to parse connection data from a URI-type of string
     // Maybe something like:
-    // cardboard://endpoint/table/dataset?bbox=w,s,e,n
+    // cardboard://table/dataset?bbox=w,s,e,n&endpoint=...
 
     var missingKeys = _([
         'table',
-        'endpoint',
         'dataset'
     ]).difference(Object.keys(uri));
 
