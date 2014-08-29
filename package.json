@@ -1,12 +1,12 @@
 {
   "name": "tilelive-cardboard",
-  "version": "0.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "Implements the tilelive API for creating mapnik vector tiles from a cardboard datasource.",
   "main": "index.js",
   "scripts": {
     "test": "tape test/*.js"
   },
-  "author": "",
+  "author": "Mapbox",
   "license": "ISC",
   "dependencies": {
     "cardboard": "^0.2.1",
