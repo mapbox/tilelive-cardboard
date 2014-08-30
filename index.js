@@ -15,6 +15,7 @@ var merc = new SphericalMercator({
 });
 
 module.exports = CardboardTiles;
+module.exports.Cardboard = Cardboard;
 
 function CardboardTiles(uri, callback) {
     // TODO: Should be able to parse connection data from a URI-type of string
