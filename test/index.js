@@ -1,13 +1,13 @@
 var test = require('tape');
 var CardboardTiles = require('..');
-var Cardboard = require('cardboard');
+var database = require('./database');
 var VectorTile = require('vector-tile').VectorTile;
 var Protobuf = require('pbf');
 var queue = require('queue-async');
 var _ = require('underscore');
+var zlib = require('zlib');
 var fs = require('fs');
 var path = require('path');
-var zlib = require('zlib');
 
 var config = {
     table: 'geo',
@@ -27,47 +27,15 @@ function setCreds() {
 setCreds();
 
 test('setup', function(t) {
-    var cardboard = new Cardboard(config);
-
-    dynalite = require('dynalite')({
-        createTableMs: 0,
-        updateTableMs: 0,
-        deleteTableMs: 0
+    var fixture = path.join(__dirname, 'fixtures', 'random-data.geojson');
+    fs.readFile(fixture, 'utf8', function(err, data) {
+        t.ifError(err, 'loaded fixture');
+        data = JSON.parse(data);
+        database.setup(data, config, function(err) {
+            t.ifError(err, 'loaded dynalite');
+            t.end();
+        })
     });
-
-    dynalite.listen(4567, createTable);
-
-    function createTable() {
-        t.pass('dynalite listening');
-        
-        cardboard.createTable(config.table, function(err, resp){
-            t.ifError(err, 'table created');
-            loadData();
-        });
-    }
-
-    function loadData() {
-        var fixture = path.join(__dirname, 'fixtures', 'random-data.geojson');
-
-        function insertFeature(feature, id, cb) {
-            cardboard.insert(id, feature, config.dataset, cb);
-        }
-
-        fs.readFile(fixture, 'utf8', function(err, data) {
-            data = JSON.parse(data);
-
-            var q = queue();
-
-            data.features.forEach(function(f, i) {
-                q.defer(insertFeature, f, i);
-            });
-
-            q.awaitAll(function(err) {
-                t.ifError(err, 'data loaded');
-                t.end();
-            });
-        });
-    }
 });
 
 var preloaded, notPreloaded;
@@ -177,16 +145,18 @@ test('getTile: no preload', function(t) {
 });
 
 test('teardown', function(t) {
-    dynalite.close(function() {
-        function closeTiles(cardboardTiles, callback) {
-            cardboardTiles.close(callback);
-        }
-        queue()
-            .defer(closeTiles, preloaded)
-            .defer(closeTiles, notPreloaded)
-            .awaitAll(function(err) {
-                t.ifError(err, 'closed tilelive-cardboard');
+    function closeTiles(cardboardTiles, callback) {
+        cardboardTiles.close(callback);
+    }
+
+    queue()
+        .defer(closeTiles, preloaded)
+        .defer(closeTiles, notPreloaded)
+        .awaitAll(function(err) {
+            t.ifError(err, 'closed tilelive-cardboard');
+            database.teardown(function(err) {
+                t.ifError(err, 'closed dynalite');
                 t.end();
             });
-    });
+        });
 });
