@@ -34,7 +34,7 @@ function CardboardTiles(uri, callback) {
         awsSecret: process.env.AWS_SECRET_ACCESS_KEY,
         table: uri.table,
         endpoint:  uri.endpoint,
-        region: process.env.AWS_DEFAULT_REGION
+        region: process.env.AWS_DEFAULT_REGION || 'us-east-1'
     };
 
     if (!this._connection.awsKey || !this._connection.awsSecret || !this._connection.region)
