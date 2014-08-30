@@ -1,6 +1,6 @@
 {
   "name": "tilelive-cardboard",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Implements the tilelive API for creating mapnik vector tiles from a cardboard datasource.",
   "main": "index.js",
   "scripts": {
