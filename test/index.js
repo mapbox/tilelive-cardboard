@@ -51,7 +51,7 @@ test('initialization: sanitizes dataset name', function(t) {
     var newDatasetName = _({ dataset: 'test.sanitization' }).defaults(config);
     new CardboardTiles(newDatasetName, function(err, source) {
         t.ifError(err, 'initialized successfully');
-        t.equal(source._dataset, 'test_sanitization', 'sanitized properly');
+        t.equal(source._info.json.vector_layers[0].id, 'test_sanitization', 'sanitized properly');
         t.end();
     });
 });

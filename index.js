@@ -41,15 +41,14 @@ function CardboardTiles(uri, callback) {
     if (!this._connection.awsKey || !this._connection.awsSecret || !this._connection.region)
         return callback(new Error('Missing AWS credentials in environment'));
 
-    // Sanitize dataset name
-    this._dataset = uri.dataset.replace(/\./g, '_');
+    this._dataset = uri.dataset;
 
     // Default vector tile info
     this._info = {
         json: {
             vector_layers: [
                 {
-                    id: this._dataset,
+                    id: uri.dataset.replace(/\./g, '_'),
                     minzoom: defaultMinZoom,
                     maxzoom: defaultMaxZoom
                 }
