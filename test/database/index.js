@@ -6,7 +6,7 @@ var dynalite;
 module.exports = {
 
     setup: function(data, config, callback) {
-        var cardboard = new Cardboard(config);
+        var cardboard = Cardboard(config);
 
         dynalite = require('dynalite')({
             createTableMs: 0,
@@ -25,14 +25,14 @@ module.exports = {
 
         function loadData() {
 
-            function insertFeature(feature, id, cb) {
-                cardboard.insert(id, feature, config.dataset, cb);
+            function insertFeature(feature, cb) {
+                cardboard.put(feature, config.dataset, cb);
             }
 
-            var q = queue();
+            var q = queue(100);
 
-            data.features.forEach(function(f, i) {
-                q.defer(insertFeature, f, i);
+            data.features.forEach(function(f) {
+                q.defer(insertFeature, f);
             });
 
             q.awaitAll(callback);
