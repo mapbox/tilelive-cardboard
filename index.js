@@ -49,7 +49,7 @@ function CardboardTiles(uri, callback) {
         json: {
             vector_layers: [
                 {
-                    id: uri.dataset.replace(/\./g, '_'),
+                    id: layerid(uri.dataset),
                     minzoom: defaultMinZoom,
                     maxzoom: defaultMaxZoom
                 }
@@ -140,7 +140,7 @@ CardboardTiles.prototype._getXml = function(bbox, callback) {
         var params = _({
             buffer: defaultBuffer,
             geojson: geojson,
-            dataset: dataset,
+            dataset: layerid(dataset),
             minzoom: defaultMinZoom,
             maxzoom: defaultMaxZoom
         }).extend(info);
@@ -149,4 +149,8 @@ CardboardTiles.prototype._getXml = function(bbox, callback) {
 
         callback(null, preparedXml);
     });
+}
+
+function layerid(id) {
+    return id.replace(/[^a-zA-Z0-9_]/ig, '_');
 }

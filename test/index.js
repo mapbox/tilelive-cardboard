@@ -12,7 +12,7 @@ var path = require('path');
 var config = {
     table: 'geo',
     endpoint: 'http://localhost:4567',
-    dataset: 'test'
+    dataset: 'test.dataset'
 };
 
 var dynalite;
@@ -88,7 +88,7 @@ var expectedInfo = {
     json: {
         vector_layers: [
             {
-                id: 'test',
+                id: 'test_dataset',
                 minzoom:0,
                 maxzoom:14
             }
@@ -119,8 +119,10 @@ function testTile(data, t) {
         t.ifError(err, 'unzipped tile');
         
         var tile = new VectorTile(new Protobuf(tileData));
-        var layer = tile.layers[config.dataset];
+        var sanitized = config.dataset.replace(/[^a-zA-Z0-9_]/ig, '_');
+        var layer = tile.layers[sanitized];
         t.ok(layer, 'contains layer');
+        t.equal(layer.name, sanitized, 'contains sanitized layer name');
         t.equal(layer.length, 43, 'contains correct number of features');
 
         var geom = layer.feature(0).loadGeometry();
