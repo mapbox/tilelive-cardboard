@@ -31,16 +31,10 @@ function CardboardTiles(uri, callback) {
         return callback(new Error('Missing keys in config: ' + missingKeys.join(', ')));
 
     this._connection = {
-        awsKey: process.env.AWS_ACCESS_KEY_ID,
-        awsSecret: process.env.AWS_SECRET_ACCESS_KEY,
-        sessionToken: process.env.AWS_SESSION_TOKEN,
         table: uri.table,
         endpoint:  uri.endpoint,
         region: process.env.AWS_DEFAULT_REGION || 'us-east-1'
     };
-
-    if (!this._connection.awsKey || !this._connection.awsSecret || !this._connection.region)
-        return callback(new Error('Missing AWS credentials in environment'));
 
     this._dataset = uri.dataset;
 

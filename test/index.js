@@ -18,13 +18,9 @@ var config = {
 var dynalite;
 
 // Expects AWS creds to be set via env vars
-function setCreds() {
-    process.env.AWS_ACCESS_KEY_ID = 'fake';
-    process.env.AWS_SECRET_ACCESS_KEY = 'fake';
-    process.env.AWS_DEFAULT_REGION = 'fake';    
-}
-
-setCreds();
+process.env.AWS_ACCESS_KEY_ID = 'fake';
+process.env.AWS_SECRET_ACCESS_KEY = 'fake';
+process.env.AWS_DEFAULT_REGION = 'fake';
 
 test('setup', function(t) {
     var fixture = path.join(__dirname, 'fixtures', 'random-data.geojson');
@@ -52,15 +48,6 @@ test('initialization: sanitizes dataset name', function(t) {
     new CardboardTiles(newDatasetName, function(err, source) {
         t.ifError(err, 'initialized successfully');
         t.equal(source._info.json.vector_layers[0].id, 'test_sanitization', 'sanitized properly');
-        t.end();
-    });
-});
-
-test('initialization: fails without AWS creds in environment', function(t) {
-    delete process.env.AWS_SECRET_ACCESS_KEY;
-    new CardboardTiles(config, function(err, source) {
-        t.equal(err.message, 'Missing AWS credentials in environment', 'expected error');
-        setCreds();
         t.end();
     });
 });
