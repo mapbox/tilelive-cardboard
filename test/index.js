@@ -201,3 +201,36 @@ test('teardown', function(t) {
             });
         });
 });
+
+test('load worst line ever', function(t) {
+    // this feature is big enough that it should trigger minzoom = 5
+    var fixture = path.join(__dirname, 'fixtures', 'worst-line-ever.geojson');
+    fs.readFile(fixture, 'utf8', function(err, data) {
+        data = {
+            type: 'FeatureCollection',
+            features: [ JSON.parse(data) ]
+        };
+
+        delete config.bbox;
+
+        database.setup(data, config, function(err) {
+            t.ifError(err, 'loaded');
+            t.end();
+        })
+    });
+});
+
+test('check minzoom calculation', function(t) {
+    var cardboardTiles = new CardboardTiles(config, function(err, src) {
+        t.ifError(err, 'initialized');
+        src.calculateInfo(function(err, info) {
+            t.equal(info.minzoom, 5, 'correct minzoom');
+            t.equal(info.maxzoom, 10, 'correct maxzoom');
+            src.close(t.end.bind(t));
+        });
+    });
+});
+
+test('teardown', function(t) {
+    database.teardown(t.end.bind(t));
+});
