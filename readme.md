@@ -17,7 +17,7 @@ var config = {
     table: 'geo',
     dataset: 'my-cardboard-dataset',
     bucket: 's3-bucket-for-large-geometries',
-    prefix: 's3-prefix-for-large-geomeries'
+    prefix: 's3-prefix-for-large-geometries'
 };
 
 // One query per getTile request:
