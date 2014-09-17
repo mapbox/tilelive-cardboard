@@ -3,7 +3,6 @@ var CardboardTiles = require('..');
 var database = require('./database');
 var VectorTile = require('vector-tile').VectorTile;
 var Protobuf = require('pbf');
-var queue = require('queue-async');
 var _ = require('underscore');
 var zlib = require('zlib');
 var fs = require('fs');
@@ -65,7 +64,7 @@ test('setup', function(t) {
     });
 });
 
-var preloaded, notPreloaded;
+var cbt;
 
 test('initialization: missing parameters', function(t) {
     new CardboardTiles(_(config).omit('table'), function(err, source) {
@@ -82,32 +81,11 @@ test('initialization: missing info via string', function(t) {
     });
 });
 
-test('initialization: sanitizes dataset name', function(t) {
-    var newDatasetName = _({ dataset: 'test.sanitization' }).defaults(config);
-    new CardboardTiles(newDatasetName, function(err, source) {
-        t.ifError(err, 'initialized successfully');
-        source.getInfo(function(err, info) {
-            t.equal(info.json.vector_layers[0].id, 'test_sanitization', 'sanitized properly');
-            t.end();
-        });
-    });
-});
-
-test('initialization: no preload', function(t) {
+test('initialization: success', function(t) {
     new CardboardTiles(config, function(err, source) {
         t.ifError(err, 'initialized successfully');
         t.ok(source instanceof CardboardTiles, 'returns correct object');
-        notPreloaded = source;
-        t.end();
-    });
-});
-
-test('initialization: preload', function(t) {
-    config.bbox = [-1, -1, 1, 1];
-    new CardboardTiles(config, function(err, source) {
-        t.ifError(err, 'initialized successfully');
-        t.ok(source instanceof CardboardTiles, 'returns correct object');
-        preloaded = source;
+        cbt = source;
         t.end();
     });
 });
@@ -121,8 +99,7 @@ var nullInfo = {
 };
 
 test('getInfo', function(t) {
-    // Preloading has no effect on getInfo
-    preloaded.getInfo(function(err, info) {
+    cbt.getInfo(function(err, info) {
         t.ifError(err, 'got metadata');
         t.deepEqual(info, nullInfo, 'got expected metadata');
         t.end();
@@ -130,8 +107,7 @@ test('getInfo', function(t) {
 });
 
 test('calculateInfo', function(t) {
-    // Preloading has no effect on calculateInfo
-    preloaded.calculateInfo(function(err, info) {
+    cbt.calculateInfo(function(err, info) {
         t.ifError(err, 'calculated metadata');
         t.deepEqual(info, expectedInfo, 'got expected metadata');
         t.end();
@@ -171,35 +147,21 @@ function testTile(data, t) {
     });
 }
 
-test('getTile: preload', function(t) {
-    preloaded.getTile(5, 15, 15, function(err, data) {
-        t.ifError(err, 'got tile');
-        testTile(data, t);
-    });
-});
-
-test('getTile: no preload', function(t) {
-    notPreloaded.getTile(5, 15, 15, function(err, data) {
+test('getTile', function(t) {
+    cbt.getTile(5, 15, 15, function(err, data) {
         t.ifError(err, 'got tile');
         testTile(data, t);
     });
 });
 
 test('teardown', function(t) {
-    function closeTiles(cardboardTiles, callback) {
-        cardboardTiles.close(callback);
-    }
-
-    queue()
-        .defer(closeTiles, preloaded)
-        .defer(closeTiles, notPreloaded)
-        .awaitAll(function(err) {
-            t.ifError(err, 'closed tilelive-cardboard');
-            database.teardown(function(err) {
-                t.ifError(err, 'closed dynalite');
-                t.end();
-            });
+    cbt.close(function(err) {
+        t.ifError(err, 'closed tilelive-cardboard');
+        database.teardown(function(err) {
+            t.ifError(err, 'closed dynalite');
+            t.end();
         });
+    });
 });
 
 test('load worst line ever', function(t) {
@@ -211,8 +173,6 @@ test('load worst line ever', function(t) {
             features: [ JSON.parse(data) ]
         };
 
-        delete config.bbox;
-
         database.setup(data, config, function(err) {
             t.ifError(err, 'loaded');
             t.end();
@@ -221,11 +181,13 @@ test('load worst line ever', function(t) {
 });
 
 test('check minzoom calculation', function(t) {
-    var cardboardTiles = new CardboardTiles(config, function(err, src) {
+    new CardboardTiles(config, function(err, src) {
         t.ifError(err, 'initialized');
+        var cache = _.clone(src._cache);
         src.calculateInfo(function(err, info) {
             t.equal(info.minzoom, 5, 'correct minzoom');
             t.equal(info.maxzoom, 10, 'correct maxzoom');
+            t.notEqual(cache.minzoom, src._cache.minzoom, 'replaced cache');
             src.close(t.end.bind(t));
         });
     });
