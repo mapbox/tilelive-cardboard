@@ -14,12 +14,10 @@ Alternately, if no bbox is specified, then each `getTile()` request will perform
 var CardboardTiles = require('tilelive-cardboard');
 
 var config = {
-    awsKey: 'secret',
-    awsSecret: 'supersecret',
     table: 'geo',
-    endpoint: 'http://localhost:4567',
-    region: 'us-east-1',
-    layer: 'my-cardboard-layer'
+    dataset: 'my-cardboard-dataset',
+    bucket: 's3-bucket-for-large-geometries',
+    prefix: 's3-prefix-for-large-geomeries'
 };
 
 // One query per getTile request:
@@ -37,10 +35,12 @@ new CardboardTiles(config, function(err, source) {
         console.log('got a tile without querying again!');
     });
 });
+
+// You you can also specify these parameters as a URI:
+var uri = 'cardboard://table/dataset/bucket/prefix?bbox=w,s,e,n';
+new CardboardTiles(uri, function(err, src) { ... });
 ```
 
 ## Assumptions
 
-- minzoom = 0
-- maxzoom = 14
 - buffer-size = 8
