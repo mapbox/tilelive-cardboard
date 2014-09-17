@@ -8,14 +8,19 @@ var _ = require('underscore');
 var zlib = require('zlib');
 var fs = require('fs');
 var path = require('path');
+var extent = require('geojson-extent');
+var SphericalMercator = require('sphericalmercator');
 
 var config = {
     table: 'geo',
     endpoint: 'http://localhost:4567',
-    dataset: 'test.dataset'
+    dataset: 'test.dataset',
+    s3: require('mock-aws-s3').S3(),
+    bucket: 'test',
+    prefix: 'mockS3'
 };
 
-var dynalite;
+var dynalite, expectedInfo, featureToCheck;
 
 // Expects AWS creds to be set via env vars
 process.env.AWS_ACCESS_KEY_ID = 'fake';
@@ -27,6 +32,32 @@ test('setup', function(t) {
     fs.readFile(fixture, 'utf8', function(err, data) {
         t.ifError(err, 'loaded fixture');
         data = JSON.parse(data);
+
+        var bbox = extent(data);
+        expectedInfo = {
+            json: {
+                vector_layers: [
+                    {
+                        id: 'test_dataset',
+                        minzoom:0,
+                        maxzoom:10
+                    }
+                ]
+            },
+            minzoom: 0,
+            maxzoom: 10,
+            bounds: bbox,
+            center: [
+                ( bbox[2] + bbox[0] ) / 2,
+                ( bbox[3] + bbox[1] ) / 2,
+                0
+            ]
+        };
+
+        featureToCheck = _.find(data.features, function(f) {
+            return f.properties.test === 'check-my-coords';
+        });
+
         database.setup(data, config, function(err) {
             t.ifError(err, 'loaded dynalite');
             t.end();
@@ -36,9 +67,17 @@ test('setup', function(t) {
 
 var preloaded, notPreloaded;
 
-test('initialization: missing info', function(t) {
+test('initialization: missing parameters', function(t) {
     new CardboardTiles(_(config).omit('table'), function(err, source) {
-        t.equal(err.message, 'Missing keys in config: table', 'expected error');
+        t.equal(err.message, 'Missing keys in uri: table', 'expected error');
+        t.end();
+    });
+});
+
+test('initialization: missing info via string', function(t) {
+    var uri = 'cardboard://' + [config.table, config.dataset, config.bucket].join('/');
+    new CardboardTiles(uri, function(err, source) {
+        t.equal(err.message, 'Missing keys in uri: prefix', 'expected error');
         t.end();
     });
 });
@@ -47,8 +86,10 @@ test('initialization: sanitizes dataset name', function(t) {
     var newDatasetName = _({ dataset: 'test.sanitization' }).defaults(config);
     new CardboardTiles(newDatasetName, function(err, source) {
         t.ifError(err, 'initialized successfully');
-        t.equal(source._info.json.vector_layers[0].id, 'test_sanitization', 'sanitized properly');
-        t.end();
+        source.getInfo(function(err, info) {
+            t.equal(info.json.vector_layers[0].id, 'test_sanitization', 'sanitized properly');
+            t.end();
+        });
     });
 });
 
@@ -71,34 +112,30 @@ test('initialization: preload', function(t) {
     });
 });
 
-var expectedInfo = {
-    json: {
-        vector_layers: [
-            {
-                id: 'test_dataset',
-                minzoom:0,
-                maxzoom:14
-            }
-        ]
-    },
-    minzoom: 0,
-    maxzoom: 14
+var nullInfo = { 
+    bounds: [ -180, -85, 180, 85 ], 
+    center: [ 0, 0, 0 ], 
+    json: { vector_layers: [ { id: 'test_dataset', maxzoom: 14, minzoom: 0 } ] }, 
+    maxzoom: 14, 
+    minzoom: 0 
 };
 
-test('getInfo: no preload', function(t) {
-    notPreloaded.getInfo(function(err, info) {
+test('getInfo', function(t) {
+    // Preloading has no effect on getInfo
+    preloaded.getInfo(function(err, info) {
         t.ifError(err, 'got metadata');
-        t.deepEqual(info, expectedInfo, 'got expected metadata');
+        t.deepEqual(info, nullInfo, 'got expected metadata');
         t.end();
     });
 });
 
-test('getInfo: preload', function(t) {
-    preloaded.getInfo(function(err, info) {
-        t.ifError(err, 'got metadata');
+test('calculateInfo', function(t) {
+    // Preloading has no effect on calculateInfo
+    preloaded.calculateInfo(function(err, info) {
+        t.ifError(err, 'calculated metadata');
         t.deepEqual(info, expectedInfo, 'got expected metadata');
         t.end();
-    });
+    })
 });
 
 function testTile(data, t) {
@@ -112,9 +149,24 @@ function testTile(data, t) {
         t.equal(layer.name, sanitized, 'contains sanitized layer name');
         t.equal(layer.length, 43, 'contains correct number of features');
 
-        var geom = layer.feature(0).loadGeometry();
-        t.deepEqual(geom, [ [ { x: 3804, y: 3937 } ] ], 'feature has correct geometry');
-        t.deepEqual(layer.feature(0).properties, { test: 'yes'}, 'feature has correct properties');
+        var feature;
+        for (var i = 0; i < layer.length; i++) {
+            feature = layer.feature(i);
+            if (feature.properties.test === 'check-my-coords') {
+                t.pass('found test feature');
+                break;
+            }
+        }
+
+        var geom = feature.loadGeometry()[0][0];
+        var sm = new SphericalMercator({ size: layer.extent });
+        var tileOrigin = 15 * layer.extent;
+        var found = sm.ll([tileOrigin + geom.x, tileOrigin + geom.y], 5);
+        var expected = featureToCheck.geometry.coordinates;
+
+        t.ok((found[0] - expected[0]) < .0002, 'X coordinate is within threshold');
+        t.ok((found[1] - expected[1]) < .0002, 'Y coordinate is within threshold');
+        t.deepEqual(feature.properties, { test: 'check-my-coords' }, 'feature has correct properties');
         t.end();
     });
 }
