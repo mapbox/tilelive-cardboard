@@ -101,7 +101,8 @@ var nullInfo = {
 test('getInfo', function(t) {
     cbt.getInfo(function(err, info) {
         t.ifError(err, 'got metadata');
-        t.deepEqual(info, nullInfo, 'got expected metadata');
+        t.ok(info.hasOwnProperty('updated'), 'metadata has updated timestamp');
+        t.deepEqual(_.omit(info, 'updated'), nullInfo, 'got expected metadata');
         t.end();
     });
 });
@@ -109,7 +110,8 @@ test('getInfo', function(t) {
 test('calculateInfo', function(t) {
     cbt.calculateInfo(function(err, info) {
         t.ifError(err, 'calculated metadata');
-        t.deepEqual(info, expectedInfo, 'got expected metadata');
+        t.ok(info.updated, 'metadata has updated timestamp');
+        t.deepEqual(_.omit(info, 'updated'), expectedInfo, 'got expected metadata');
         t.end();
     })
 });

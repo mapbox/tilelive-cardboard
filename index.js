@@ -156,6 +156,7 @@ function metadataToTileJSON(dataset, metadata) {
             zooms.min > 0 ? zooms.min : 0
         ],
         minzoom: zooms.min,
-        maxzoom: zooms.max
+        maxzoom: zooms.max,
+        updated: metadata.updated || 0
     };
 }
