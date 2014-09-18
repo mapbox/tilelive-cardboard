@@ -187,6 +187,7 @@ test('check minzoom calculation', function(t) {
         src.calculateInfo(function(err, info) {
             t.equal(info.minzoom, 5, 'correct minzoom');
             t.equal(info.maxzoom, 10, 'correct maxzoom');
+            t.equal(info.center[2], 5, 'correct center zoom');
             t.notEqual(cache.minzoom, src._cache.minzoom, 'replaced cache');
             src.close(t.end.bind(t));
         });

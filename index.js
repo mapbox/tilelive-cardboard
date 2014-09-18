@@ -153,7 +153,7 @@ function metadataToTileJSON(dataset, metadata) {
         center: [
             ( bounds[2] + bounds[0] ) / 2,
             ( bounds[3] + bounds[1] ) / 2,
-            0
+            zooms.min > 0 ? zooms.min : 0
         ],
         minzoom: zooms.min,
         maxzoom: zooms.max
