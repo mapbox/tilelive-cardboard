@@ -71,7 +71,6 @@ CardboardTiles.prototype.calculateInfo = function(callback) {
             return source._cache.close(function(err) {
                 source._info = info;
                 source._cache = new Cache(info, source._dataset, source._connection);
-                console.log('replaced');
                 callback(null, info);
             });
         }
