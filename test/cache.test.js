@@ -60,8 +60,8 @@ test('getTile', function(t) {
         t.ifError(err, 'got tile');
         var key = tilebelt.tileToQuadkey([14, 15, 5]);
         var badKey = tilebelt.tileToQuadkey([15, 15, 5]);
-        t.ok(cache._bridges[key], 'bridge obj cached for parent tile');
-        t.notOk(cache._bridges[badKey], 'no extra bridge obj cached');
+        t.ok(cache[key], 'bridge obj cached for parent tile');
+        t.notOk(cache[badKey], 'no extra bridge obj cached');
         t.end();
     });
 });
