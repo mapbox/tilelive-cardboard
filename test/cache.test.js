@@ -13,7 +13,8 @@ var config = {
     dataset: 'test.dataset',
     s3: require('mock-aws-s3').S3(),
     bucket: 'test',
-    prefix: 'mockS3'
+    prefix: 'mockS3',
+    region: 'fake'
 };
 
 process.env.AWS_ACCESS_KEY_ID = 'fake';

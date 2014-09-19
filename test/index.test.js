@@ -16,7 +16,8 @@ var config = {
     dataset: 'test.dataset',
     s3: require('mock-aws-s3').S3(),
     bucket: 'test',
-    prefix: 'mockS3'
+    prefix: 'mockS3',
+    region: 'fake'
 };
 
 var dynalite, expectedInfo, featureToCheck;
@@ -58,7 +59,7 @@ test('setup', function(t) {
         database.setup(data, config, function(err) {
             t.ifError(err, 'loaded dynalite');
             t.end();
-        })
+        });
     });
 });
 
