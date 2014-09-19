@@ -3,7 +3,6 @@ var CardboardTiles = require('..');
 var database = require('./database');
 var VectorTile = require('vector-tile').VectorTile;
 var Protobuf = require('pbf');
-var queue = require('queue-async');
 var _ = require('underscore');
 var zlib = require('zlib');
 var fs = require('fs');
@@ -17,15 +16,14 @@ var config = {
     dataset: 'test.dataset',
     s3: require('mock-aws-s3').S3(),
     bucket: 'test',
-    prefix: 'mockS3'
+    prefix: 'mockS3',
+    region: 'fake'
 };
 
 var dynalite, expectedInfo, featureToCheck;
 
-// Expects AWS creds to be set via env vars
 process.env.AWS_ACCESS_KEY_ID = 'fake';
 process.env.AWS_SECRET_ACCESS_KEY = 'fake';
-process.env.AWS_DEFAULT_REGION = 'fake';
 
 test('setup', function(t) {
     var fixture = path.join(__dirname, 'fixtures', 'random-data.geojson');
@@ -35,15 +33,13 @@ test('setup', function(t) {
 
         var bbox = extent(data);
         expectedInfo = {
-            json: {
-                vector_layers: [
-                    {
-                        id: 'test_dataset',
-                        minzoom:0,
-                        maxzoom:10
-                    }
-                ]
-            },
+            vector_layers: [
+                {
+                    id: 'test_dataset',
+                    minzoom:0,
+                    maxzoom:10
+                }
+            ],
             minzoom: 0,
             maxzoom: 10,
             bounds: bbox,
@@ -61,11 +57,11 @@ test('setup', function(t) {
         database.setup(data, config, function(err) {
             t.ifError(err, 'loaded dynalite');
             t.end();
-        })
+        });
     });
 });
 
-var preloaded, notPreloaded;
+var cbt;
 
 test('initialization: missing parameters', function(t) {
     new CardboardTiles(_(config).omit('table'), function(err, source) {
@@ -82,58 +78,37 @@ test('initialization: missing info via string', function(t) {
     });
 });
 
-test('initialization: sanitizes dataset name', function(t) {
-    var newDatasetName = _({ dataset: 'test.sanitization' }).defaults(config);
-    new CardboardTiles(newDatasetName, function(err, source) {
-        t.ifError(err, 'initialized successfully');
-        source.getInfo(function(err, info) {
-            t.equal(info.json.vector_layers[0].id, 'test_sanitization', 'sanitized properly');
-            t.end();
-        });
-    });
-});
-
-test('initialization: no preload', function(t) {
+test('initialization: success', function(t) {
     new CardboardTiles(config, function(err, source) {
         t.ifError(err, 'initialized successfully');
         t.ok(source instanceof CardboardTiles, 'returns correct object');
-        notPreloaded = source;
+        cbt = source;
         t.end();
     });
 });
 
-test('initialization: preload', function(t) {
-    config.bbox = [-1, -1, 1, 1];
-    new CardboardTiles(config, function(err, source) {
-        t.ifError(err, 'initialized successfully');
-        t.ok(source instanceof CardboardTiles, 'returns correct object');
-        preloaded = source;
-        t.end();
-    });
-});
-
-var nullInfo = { 
-    bounds: [ -180, -85, 180, 85 ], 
-    center: [ 0, 0, 0 ], 
-    json: { vector_layers: [ { id: 'test_dataset', maxzoom: 14, minzoom: 0 } ] }, 
-    maxzoom: 14, 
-    minzoom: 0 
+var nullInfo = {
+    bounds: [ -180, -85, 180, 85 ],
+    center: [ 0, 0, 0 ],
+    vector_layers: [ { id: 'test_dataset', maxzoom: 14, minzoom: 0 } ],
+    maxzoom: 14,
+    minzoom: 0
 };
 
 test('getInfo', function(t) {
-    // Preloading has no effect on getInfo
-    preloaded.getInfo(function(err, info) {
+    cbt.getInfo(function(err, info) {
         t.ifError(err, 'got metadata');
-        t.deepEqual(info, nullInfo, 'got expected metadata');
+        t.ok(info.hasOwnProperty('updated'), 'metadata has updated timestamp');
+        t.deepEqual(_.omit(info, 'updated'), nullInfo, 'got expected metadata');
         t.end();
     });
 });
 
 test('calculateInfo', function(t) {
-    // Preloading has no effect on calculateInfo
-    preloaded.calculateInfo(function(err, info) {
+    cbt.calculateInfo(function(err, info) {
         t.ifError(err, 'calculated metadata');
-        t.deepEqual(info, expectedInfo, 'got expected metadata');
+        t.ok(info.updated, 'metadata has updated timestamp');
+        t.deepEqual(_.omit(info, 'updated'), expectedInfo, 'got expected metadata');
         t.end();
     })
 });
@@ -141,7 +116,7 @@ test('calculateInfo', function(t) {
 function testTile(data, t) {
     zlib.gunzip(data, function(err, tileData) {
         t.ifError(err, 'unzipped tile');
-        
+
         var tile = new VectorTile(new Protobuf(tileData));
         var sanitized = config.dataset.replace(/[^a-zA-Z0-9_]/ig, '_');
         var layer = tile.layers[sanitized];
@@ -171,35 +146,21 @@ function testTile(data, t) {
     });
 }
 
-test('getTile: preload', function(t) {
-    preloaded.getTile(5, 15, 15, function(err, data) {
-        t.ifError(err, 'got tile');
-        testTile(data, t);
-    });
-});
-
-test('getTile: no preload', function(t) {
-    notPreloaded.getTile(5, 15, 15, function(err, data) {
+test('getTile', function(t) {
+    cbt.getTile(5, 15, 15, function(err, data) {
         t.ifError(err, 'got tile');
         testTile(data, t);
     });
 });
 
 test('teardown', function(t) {
-    function closeTiles(cardboardTiles, callback) {
-        cardboardTiles.close(callback);
-    }
-
-    queue()
-        .defer(closeTiles, preloaded)
-        .defer(closeTiles, notPreloaded)
-        .awaitAll(function(err) {
-            t.ifError(err, 'closed tilelive-cardboard');
-            database.teardown(function(err) {
-                t.ifError(err, 'closed dynalite');
-                t.end();
-            });
+    cbt.close(function(err) {
+        t.ifError(err, 'closed tilelive-cardboard');
+        database.teardown(function(err) {
+            t.ifError(err, 'closed dynalite');
+            t.end();
         });
+    });
 });
 
 test('load worst line ever', function(t) {
@@ -211,8 +172,6 @@ test('load worst line ever', function(t) {
             features: [ JSON.parse(data) ]
         };
 
-        delete config.bbox;
-
         database.setup(data, config, function(err) {
             t.ifError(err, 'loaded');
             t.end();
@@ -221,11 +180,14 @@ test('load worst line ever', function(t) {
 });
 
 test('check minzoom calculation', function(t) {
-    var cardboardTiles = new CardboardTiles(config, function(err, src) {
+    new CardboardTiles(config, function(err, src) {
         t.ifError(err, 'initialized');
+        var cache = _.clone(src._cache);
         src.calculateInfo(function(err, info) {
             t.equal(info.minzoom, 5, 'correct minzoom');
             t.equal(info.maxzoom, 10, 'correct maxzoom');
+            t.equal(info.center[2], 5, 'correct center zoom');
+            t.notEqual(cache.minzoom, src._cache.minzoom, 'replaced cache');
             src.close(t.end.bind(t));
         });
     });

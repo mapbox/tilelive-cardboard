@@ -6,7 +6,7 @@
     <Parameter name="center"><%= center.join(',') %></Parameter>
     <Parameter name="bounds"><%= bounds.join(',') %></Parameter>
     <Parameter name="format">pbf</Parameter>
-    <Parameter name="json"><![CDATA[<%= JSON.stringify(json) %>]]></Parameter>
+    <Parameter name="json"><![CDATA[<%= JSON.stringify(vector_layers) %>]]></Parameter>
     <Parameter name="maxzoom"><%= maxzoom %></Parameter>
     <Parameter name="minzoom"><%= minzoom %></Parameter>
   </Parameters>

@@ -9,8 +9,10 @@
   "author": "Mapbox",
   "license": "ISC",
   "dependencies": {
-    "cardboard": "~0.6.0",
+    "cardboard": "0.7.0",
+    "queue-async": "^1.0.7",
     "sphericalmercator": "^1.0.2",
+    "tilebelt": "^0.5.2",
     "tilelive-bridge": "~0.6.0",
     "underscore": "^1.7.0"
   },
@@ -19,7 +21,6 @@
     "geojson-extent": "^0.3.1",
     "mock-aws-s3": "^0.2.1",
     "pbf": "0.0.2",
-    "queue-async": "^1.0.7",
     "tape": "^2.14.0",
     "vector-tile": "~0.1.2"
   }
