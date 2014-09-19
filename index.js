@@ -1,15 +1,10 @@
 var Cardboard = require('cardboard');
-var Bridge = require('tilelive-bridge');
 var SphericalMercator = require('sphericalmercator');
 var _ = require('underscore');
-var fs = require('fs');
-var path = require('path');
-var xml = fs.readFileSync(path.join(__dirname, 'map.xml'), 'utf8');
+var Cache = require('./lib/cache');
 var url = require('url');
 
-// Assumptions.
-var tileSize = 256, defaultBuffer = 8;
-
+var tileSize = 256;
 var merc = new SphericalMercator({ size: tileSize });
 
 module.exports = CardboardTiles;
@@ -17,9 +12,7 @@ module.exports.Cardboard = Cardboard;
 
 function CardboardTiles(uri, callback) {
     if (typeof uri === 'string') {
-        // cardboard://table/dataset/bucket/prefix?bbox=w,s,e,n
-
-        uri = url.parse(uri, true, true);
+        uri = url.parse(uri);
 
         if (uri.protocol !== 'cardboard:')
             return callback(new Error('Invalid protocol'));
@@ -29,7 +22,6 @@ function CardboardTiles(uri, callback) {
         if (details[0]) uri.dataset = details[0];
         if (details[1]) uri.bucket = details[1];
         if (details[2]) uri.prefix = details[2];
-        if (uri.query.bbox) uri.bbox = uri.query.bbox.split(',');
     }
 
     var missingKeys = _([
@@ -54,26 +46,12 @@ function CardboardTiles(uri, callback) {
 
     var self = this;
 
-    self.getInfo(function(err) {
+    self.getInfo(function(err, info) {
         if (err) return callback(err);
-        if (uri.bbox) return preload();
+        self._minzoom = info.minzoom;
+        self._cache = new Cache(info, self._dataset, self._connection);
         callback(null, self);
     });
-
-    function preload() {
-        self._getXml(uri.bbox, function(err, mapnikXml) {
-            if (err) return callback(err);
-
-            new Bridge({ xml: mapnikXml }, function(err, source) {
-                if (err) return callback(err);
-
-                self._bridge = source;
-                self._preloaded = true;
-
-                callback(null, self);
-            });
-        });
-    }
 }
 
 CardboardTiles.registerProtocols = function(tilelive) {
@@ -86,7 +64,18 @@ CardboardTiles.prototype.calculateInfo = function(callback) {
 
     cardboard.calculateDatasetInfo(this._dataset, function(err, metadata) {
         if (err) return callback(err);
-        source._info = metadataToTileJSON(source._dataset, metadata);
+        var info = metadataToTileJSON(source._dataset, metadata);
+
+        // If minzoom changed then our cache is invalid
+        if (source._info.minzoom !== info.minzoom) {
+            return source._cache.close(function(err) {
+                source._info = info;
+                source._cache = new Cache(info, source._dataset, source._connection);
+                callback(null, info);
+            });
+        }
+
+        source._info = info;
         callback(null, source._info);
     });
 };
@@ -105,63 +94,11 @@ CardboardTiles.prototype.getInfo = function(callback) {
 };
 
 CardboardTiles.prototype.getTile = function(z, x, y, callback) {
-    if (this._preloaded) return this._bridge.getTile(z, x, y, callback);
-
-    var px = [
-        ( tileSize * x ) - defaultBuffer,
-        ( tileSize * ( y + 1 ) ) + defaultBuffer,
-        ( tileSize * ( x + 1 ) ) + defaultBuffer,
-        ( tileSize * y ) - defaultBuffer
-    ];
-
-    var buffered = [
-        merc.ll([ px[0], px[3] ], z)[0],
-        merc.ll([ px[0], px[1] ], z)[1],
-        merc.ll([ px[2], px[1] ], z)[0],
-        merc.ll([ px[2], px[3] ], z)[1]
-    ];
-
-    this._getXml(buffered, function(err, mapnikXml) {
-        if (err) return callback(err);
-
-        new Bridge({ xml: mapnikXml }, function(err, source) {
-            if (err) return callback(err);
-
-            source.getTile(z, x, y, function(err, tile) {
-                source.close(function() {
-                    callback(err, tile);
-                });
-            });
-        });
-    });
+    this._cache.getTile(z, x, y, callback);
 };
 
 CardboardTiles.prototype.close = function(callback) {
-    if (this._bridge) return this._bridge.close(callback);
-    callback();
-};
-
-CardboardTiles.prototype._getXml = function(bbox, callback) {
-    var cardboard = Cardboard(this._connection);
-    var dataset = this._dataset;
-    
-    this.getInfo(function(err, info) {
-        if (err) return callback(err);
-
-        cardboard.bboxQuery(bbox, dataset, function(err, data) {
-            if (err) return callback(err, data);
-
-            var params = _({
-                buffer: defaultBuffer,
-                geojson: data,
-                dataset: layerid(dataset)
-            }).extend(info);
-
-            var preparedXml = _.template(xml)(params);
-
-            callback(null, preparedXml);
-        });
-    });
+    this._cache.close(callback);
 };
 
 function layerid(id) {
@@ -216,7 +153,7 @@ function metadataToTileJSON(dataset, metadata) {
         center: [
             ( bounds[2] + bounds[0] ) / 2,
             ( bounds[3] + bounds[1] ) / 2,
-            0
+            zooms.min > 0 ? zooms.min : 0
         ],
         minzoom: zooms.min,
         maxzoom: zooms.max
