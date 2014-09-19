@@ -22,10 +22,8 @@ var config = {
 
 var dynalite, expectedInfo, featureToCheck;
 
-// Expects AWS creds to be set via env vars
 process.env.AWS_ACCESS_KEY_ID = 'fake';
 process.env.AWS_SECRET_ACCESS_KEY = 'fake';
-process.env.AWS_DEFAULT_REGION = 'fake';
 
 test('setup', function(t) {
     var fixture = path.join(__dirname, 'fixtures', 'random-data.geojson');

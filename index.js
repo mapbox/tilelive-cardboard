@@ -22,13 +22,15 @@ function CardboardTiles(uri, callback) {
         if (details[0]) uri.dataset = details[0];
         if (details[1]) uri.bucket = details[1];
         if (details[2]) uri.prefix = details[2];
+        if (details[3]) uri.region = details[3];
     }
 
     var missingKeys = _([
         'table',
         'dataset',
         'bucket',
-        'prefix'
+        'prefix',
+        'region'
     ]).difference(Object.keys(uri));
 
     if (missingKeys.length > 0)
@@ -37,7 +39,7 @@ function CardboardTiles(uri, callback) {
     this._connection = {
         table: uri.table,
         endpoint:  uri.endpoint,
-        region: process.env.AWS_DEFAULT_REGION || 'us-east-1',
+        region: uri.region,
         bucket: uri.bucket,
         prefix: uri.prefix
     };

@@ -19,7 +19,6 @@ var config = {
 
 process.env.AWS_ACCESS_KEY_ID = 'fake';
 process.env.AWS_SECRET_ACCESS_KEY = 'fake';
-process.env.AWS_DEFAULT_REGION = 'fake';
 
 test('load data', function(t) {
     // Eight lines, one in each of eight adjacent z6 tiles.
