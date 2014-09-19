@@ -31,7 +31,7 @@ function CardboardTiles(uri, callback) {
         'prefix'
     ]).difference(Object.keys(uri));
 
-    if (missingKeys.length > 0) 
+    if (missingKeys.length > 0)
         return callback(new Error('Missing keys in uri: ' + missingKeys.join(', ')));
 
     this._connection = {
@@ -140,15 +140,13 @@ function metadataToTileJSON(dataset, metadata) {
     var zooms = getMinMaxZoom(metadata.size, bounds);
 
     return {
-        json: {
-            vector_layers: [
-                {
-                    id: layerid(dataset),
-                    minzoom: zooms.min,
-                    maxzoom: zooms.max
-                }
-            ]
-        },
+        vector_layers: [
+            {
+                id: layerid(dataset),
+                minzoom: zooms.min,
+                maxzoom: zooms.max
+            }
+        ],
         bounds: bounds,
         center: [
             ( bounds[2] + bounds[0] ) / 2,

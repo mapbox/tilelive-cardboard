@@ -34,15 +34,13 @@ test('setup', function(t) {
 
         var bbox = extent(data);
         expectedInfo = {
-            json: {
-                vector_layers: [
-                    {
-                        id: 'test_dataset',
-                        minzoom:0,
-                        maxzoom:10
-                    }
-                ]
-            },
+            vector_layers: [
+                {
+                    id: 'test_dataset',
+                    minzoom:0,
+                    maxzoom:10
+                }
+            ],
             minzoom: 0,
             maxzoom: 10,
             bounds: bbox,
@@ -90,12 +88,12 @@ test('initialization: success', function(t) {
     });
 });
 
-var nullInfo = { 
-    bounds: [ -180, -85, 180, 85 ], 
-    center: [ 0, 0, 0 ], 
-    json: { vector_layers: [ { id: 'test_dataset', maxzoom: 14, minzoom: 0 } ] }, 
-    maxzoom: 14, 
-    minzoom: 0 
+var nullInfo = {
+    bounds: [ -180, -85, 180, 85 ],
+    center: [ 0, 0, 0 ],
+    vector_layers: [ { id: 'test_dataset', maxzoom: 14, minzoom: 0 } ],
+    maxzoom: 14,
+    minzoom: 0
 };
 
 test('getInfo', function(t) {
@@ -119,7 +117,7 @@ test('calculateInfo', function(t) {
 function testTile(data, t) {
     zlib.gunzip(data, function(err, tileData) {
         t.ifError(err, 'unzipped tile');
-        
+
         var tile = new VectorTile(new Protobuf(tileData));
         var sanitized = config.dataset.replace(/[^a-zA-Z0-9_]/ig, '_');
         var layer = tile.layers[sanitized];
