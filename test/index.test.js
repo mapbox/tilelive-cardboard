@@ -73,7 +73,7 @@ test('initialization: missing parameters', function(t) {
 test('initialization: missing info via string', function(t) {
     var uri = 'cardboard://' + [config.table, config.dataset, config.bucket].join('/');
     new CardboardTiles(uri, function(err, source) {
-        t.equal(err.message, 'Missing keys in uri: prefix', 'expected error');
+        t.equal(err.message, 'Missing keys in uri: prefix, region', 'expected error');
         t.end();
     });
 });
