@@ -9,7 +9,7 @@
   "author": "Mapbox",
   "license": "ISC",
   "dependencies": {
-    "cardboard": "0.7.0",
+    "cardboard": "0.7.3",
     "queue-async": "^1.0.7",
     "sphericalmercator": "^1.0.2",
     "tilebelt": "^0.5.2",
