@@ -1,3 +1,6 @@
+⚠️ This repository is no longer actively maintained by Mapbox.
+
+##
 # tilelive-cardboard
 
 [![build status](https://travis-ci.com/mapbox/tilelive-cardboard.svg?branch=master)](https://travis-ci.com/mapbox/tilelive-cardboard)
